@@ -1,0 +1,82 @@
+openapi: 3.0.0
+
+info:
+  version: 0.0.1
+  title: Account Service
+  description: The Account service
+
+tags:
+  - name: "Account"
+
+paths:
+  /add/account:
+    post:
+      summary: Add a new account
+      tags:
+        - "Account"
+      parameters:
+        - name: correlation-id
+          in: header
+          description: correlationId to track request
+          required: true
+          schema:
+            type: string
+            format: ""
+      requestBody:
+        $ref: '#/components/requestBodies/AccountBody'
+      operationId: addAccount
+      responses:
+        '201':
+          description: Created
+  /get/account:
+    get:
+      parameters:
+        - name: correlation-id
+          in: header
+          description: ID of account to fetch
+          schema:
+            type: string
+            format: ""
+      summary: Get an account
+      tags:
+        - "Account"
+
+      description: This is a Account service description
+      operationId: getAccount
+      responses:
+        "200":
+          description: Operation successed!
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Account'
+
+components:
+  schemas:
+    Account:
+      description: This is the Account model
+      type: object
+      properties:
+        id:
+          description: The ID of Account
+          type: string
+        firstname:
+          description: The full name of the User
+          type: string
+        lastname:
+          description: The full name of the User
+          type: string
+        city:
+          description: The City of the Account
+          type: string
+
+  requestBodies:
+    AccountBody:
+      description: A JSON object containing info
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Account'
