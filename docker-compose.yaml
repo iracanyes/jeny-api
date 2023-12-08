@@ -1,0 +1,114 @@
+version: '3.9'
+services:
+  binance-data-provider:
+    build:
+      context: ../../docker/spring/jeny-api
+      dockerfile: ./docker/spring/binance-api/Dockerfile
+    depends_on:
+      - consul
+    networks:
+      - jeny-api
+  mongo:
+    # Important: to scale the service do not use custom container name
+    container_name: mongo
+    #image: mongo:latest
+    build:
+      context: ./docker/mongo
+      dockerfile: ./Dockerfile
+    #restart: always
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USER}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD}
+      - MONGO_INITDB_DATABASE=${MONGO_DATABASE}
+    networks:
+      - jeny-api
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./data/mongo/jeny-api/db:/data/db
+      - ./docker/mongo/conf:/opt/mongo/conf
+      #- ./docker/mongo/tls/mongodb.keyfile:/opt/mongo/tls/mongodb.keyfile:ro
+      - ./docker/mongo/tls/certs/mongodb.pem:/opt/mongo/tls/certs/mongodb.pem
+      - ./docker/mongo/tls/certs/mongodb-ca.pem:/opt/mongo/tls/certs/mongodb-ca.pem
+    # Issue :
+    # 1. requireTLS option bloc mongo-express connection. => Set: preferTLS
+    # 2. setting --replSet rs0, mongo will automatically elect the primary
+    # command: mongod --bind_ip localhost,mongo --port 27017 --replSet rs0 --tlsMode preferTLS --tlsCertificateKeyFile /opt/mongo/tls/certs/mongodb.pem --tlsCAFile /opt/mongo/tls/certs/mongodb-ca.pem --tlsAllowInvalidCertificates --tlsAllowInvalidHostnames --auth --keyFile /opt/mongo/tls/mongodb.keyfile
+    command: mongod --bind_ip localhost,mongo --port 27017 --tlsMode preferTLS --tlsCertificateKeyFile /opt/mongo/tls/certs/mongodb.pem --tlsCAFile /opt/mongo/tls/certs/mongodb-ca.pem --tlsAllowInvalidCertificates --tlsAllowInvalidHostnames --auth --keyFile /opt/mongo/tls/mongodb.keyfile
+  mongo-1:
+    # Important: to scale the service do not use custom container name
+    container_name: mongo-1
+    #image: mongo:latest
+    build:
+      context: ./docker/mongo
+      dockerfile: ./Dockerfile
+    #restart: always
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USER}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD}
+      - MONGO_INITDB_DATABASE=${MONGO_DATABASE}
+    networks:
+      - jeny-api
+    ports:
+      - "27018:27017"
+    volumes:
+      - ./data/mongo/jeny-api/db-1:/data/db
+      - ./docker/mongo/conf:/opt/mongo/conf
+      #- ./docker/mongo/tls/mongodb.keyfile:/opt/mongo/tls/mongodb.keyfile:ro
+      - ./docker/mongo/tls/certs/mongodb.pem:/opt/mongo/tls/certs/mongodb-1.pem
+      - ./docker/mongo/tls/certs/mongodb-ca.pem:/opt/mongo/tls/certs/mongodb-ca.pem
+    # Issue :
+    # 1. requireTLS option bloc mongo-express connection. => Set: preferTLS
+    # 2. setting --replSet rs0, mongo will automatically elect the primary
+    # command: mongod --bind_ip localhost,mongo-1 --port 27018 --replSet rs0 --tlsMode preferTLS --tlsCertificateKeyFile /opt/mongo/tls/certs/mongodb-1.pem --tlsCAFile /opt/mongo/tls/certs/mongodb-ca.pem --tlsAllowInvalidCertificates --auth --keyFile /opt/mongo/tls/mongodb.keyfile
+    command: mongod --bind_ip localhost,mongo-1 --port 27018 --tlsMode preferTLS --tlsCertificateKeyFile /opt/mongo/tls/certs/mongodb-1.pem --tlsCAFile /opt/mongo/tls/certs/mongodb-ca.pem --tlsAllowInvalidCertificates --auth --keyFile /opt/mongo/tls/mongodb.keyfile
+  mongo-2:
+    # Important: to scale the service do not use custom container name
+    container_name: mongo-2
+    #image: mongo:latest
+    build:
+      context: ./docker/mongo
+      dockerfile: ./Dockerfile
+    #restart: always
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USER}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD}
+      - MONGO_INITDB_DATABASE=${MONGO_DATABASE}
+    networks:
+      - jeny-api
+    ports:
+      - "27019:27017"
+    volumes:
+      - ./data/mongo/jeny-api/db-2:/data/db
+      - ./docker/mongo/conf:/opt/mongo/conf
+      #- ./docker/mongo/tls/mongodb.keyfile:/opt/mongo/tls/mongodb.keyfile:ro
+      - ./docker/mongo/tls/certs/mongodb.pem:/opt/mongo/tls/certs/mongodb-2.pem
+      - ./docker/mongo/tls/certs/mongodb-ca.pem:/opt/mongo/tls/certs/mongodb-ca.pem
+    # Issue :
+    # 1. requireTLS option bloc mongo-express connection. => Set: preferTLS
+    # 2. setting --replSet rs0, mongo will automatically elect the primary
+    # command: mongod --bind_ip localhost,mongo-2 --port 27019  --tlsMode preferTLS --tlsCertificateKeyFile /opt/mongo/tls/certs/mongodb-2.pem --tlsCAFile /opt/mongo/tls/certs/mongodb-ca.pem --tlsAllowInvalidCertificates --auth --keyFile /opt/mongo/tls/mongodb.keyfile
+    command: mongod --bind_ip localhost,mongo-2 --port 27019  --tlsMode preferTLS --tlsCertificateKeyFile /opt/mongo/tls/certs/mongodb-2.pem --tlsCAFile /opt/mongo/tls/certs/mongodb-ca.pem --tlsAllowInvalidCertificates --auth --keyFile /opt/mongo/tls/mongodb.keyfile
+  mongo-init-replica:
+    container_name: mongo-init-replica
+    image: mongo
+    command: >
+      bash -c '
+        sleep 10
+        mongosh "mongodb://mongo:27017" --tls --tlsCertificateKeyFile /opt/mongo/tls/certs/mongodb.pem --tlsCAFile /opt/mongo/tls/certs/mongodb-ca.pem --tlsAllowInvalidCertificates -u "$MONGO_ROOT_USER" -p "$MONGO_ROOT_PASSWORD" --authenticationDatabase admin --eval "load(\"/opt/mongo/conf/mongo-init.js\")"
+      '
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USER}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD}
+    volumes:
+      - ./docker/mongo/tls/certs/mongodb.pem:/opt/mongo/tls/certs/mongodb.pem
+      - ./docker/mongo/tls/certs/mongodb-ca.pem:/opt/mongo/tls/certs/mongodb-ca.pem
+      - ./docker/mongo/conf/mongo-init.js:/opt/mongo/conf/mongo-init.js
+    depends_on:
+      - mongo
+      - mongo-1
+      - mongo-2
+    networks:
+      - jeny-api
+networks:
+  jeny-api:
