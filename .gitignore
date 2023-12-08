@@ -59,8 +59,6 @@ docs
 .env.local
 **/.env.local
 
-# Certificates
-**/*.pem
 
 # Certificates
 **/*.pem
@@ -69,12 +67,3 @@ docs
 # Keystore and truststore
 **/*.p12
 **/*.jks
-
-# Compiled
-libs
-
-
-# Keystore and truststore
-**/*.p12
-**/*.jks
-
