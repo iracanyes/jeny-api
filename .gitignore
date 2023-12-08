@@ -50,5 +50,13 @@ docs
 .env.local
 **/.env.local
 
+# Dependencies
+libs
+
+# Certificates
+**/*.pem
 
 
+# Keystore and truststore
+**/*.p12
+**/*.jks
